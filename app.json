@@ -1,0 +1,6 @@
+{
+  "name": "Start on Heroku: Go",
+  "description": "Outage admin",
+  "keywords": ["getting-started", "go", "outage", "example"],
+  "repository": "http://github.com/kyeett/outage-admin"
+}

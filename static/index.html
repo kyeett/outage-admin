@@ -1,0 +1,129 @@
+<head>
+
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+<link rel="shortcut icon" type="image/png" href="static/favicon.png"/>
+
+<script
+  src="https://code.jquery.com/jquery-3.4.1.min.js"
+  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+  crossorigin="anonymous"></script>
+
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/select/1.3.0/js/dataTables.select.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="static/scripts.js"></script>
+
+<style>
+
+.large-padding-top {
+    padding-top:100px;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="row">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 text-center">
+        <h1 class="large-padding-top">Outtages</h1>
+
+
+        <table id="example" class="table table-striped table-bordered" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Message</th>
+                        <th>Handled</th>
+                    </tr>
+                </thead>
+        </table>
+    </div>
+    <div class="col-md-2"></div>
+</div>
+
+<script>
+
+function buttonHandledText(numSelected) {
+    return "Mark "+numSelected+" row(s) as handled";
+}
+
+function buttonUnhandledText(numSelected) {
+    return "Mark "+numSelected+" row(s) as unhandled";
+}
+
+function updateButtons(numSelected) {
+    $('.handleBtn').html(buttonHandledText(numSelected))
+    $('.unhandleBtn').html(buttonUnhandledText(numSelected))
+}
+
+$(document).ready(function() {
+    updateButtons(0);
+    
+    var table = $('#example').DataTable( {
+        select: true,
+        "ajax": {
+            url: '/order_failures',
+            dataSrc: ''
+        },
+        "columns": [
+            { "data": "id" },
+            { "data": 
+                "created_at",
+                "render": function ( data, type, row ) { return  data.replace('T',' ').substring(0,19); }
+            },
+            { "data": "message" },
+            { 
+                "data": "handled",
+                "render": function ( data, type, row ) { return  data ? "yes" : "no"; }
+            }
+        ],
+        "createdRow": function( row, data, dataIndex ) {
+            if(data.handled == true){
+                $(row).css('color','lightgray')
+            }
+        },
+        dom: 'frtB',
+        buttons: [
+            {
+                text: buttonHandledText(0),
+                className: 'btn btn-success handleBtn p-2',
+                action: function () {
+                    var selected_ids = $.map(table.rows({ selected: true }).data(), function (item) { return item.id });
+                    if (selected_ids.length == 0) { return }
+
+                    $.post( "order_failures/mark_as_handled", JSON.stringify(selected_ids), function( data ) {
+                        table.ajax.reload( null, false ); 
+                    });
+                }
+            },
+                        {
+                text: buttonUnhandledText(0),
+                className: 'btn btn-danger unhandleBtn p-2',
+                action: function () {
+                    var selected_ids = $.map(table.rows({ selected: true }).data(), function (item) { return item.id });
+                    if (selected_ids.length == 0) { return }
+
+                    $.post( "order_failures/mark_as_unhandled", JSON.stringify(selected_ids), function( data ) {
+                        table.ajax.reload( null, false ); 
+                    });
+                }
+            }
+        ]
+    } );
+
+    table.on( 'select', function ( e, dt, type, indexes ) {
+        var numSelected = table.rows( { selected: true } ).count(); 
+        updateButtons(numSelected);
+    } );
+
+    $(".dt-buttons").addClass("text-center");
+
+} );
+</script>
+
+</body>
